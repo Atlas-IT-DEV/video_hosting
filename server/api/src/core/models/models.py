@@ -29,16 +29,16 @@ class ImageTypeEnum(StrictStr, Enum):
     Additional = 'additional'
 
 
-class Images(BaseModel):
-    """
-    Model of images
-    """
-    ID: Optional[int] = Field(None,
-                              alias="id")
-    Url: StrictStr = Field(...,
-                           alias="url",
-                           examples=["https://example.com"],
-                           description="URL of images")
+class User(BaseModel):
+    id: int
+    email: str | None
+    avatar_url: str | None
+    first_name: str | None
+    last_name: str | None
+    country: str | None
+    phone: str | None
+    role: str | None
+    additional_data: str | None
 
 
 class ProductImages(BaseModel):

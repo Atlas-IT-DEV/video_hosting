@@ -11,7 +11,7 @@ class Database:
     def __init__(self):
         self.connection = pymysql.connect(
             host=config.__getattr__("DB_HOST"),
-            db=config.__getattr__("DB"),
+            db=config.__getattr__("DB_NAME"),
             port=int(config.__getattr__("DB_PORT")),
             user=config.__getattr__("DB_USER"),
             password=config.__getattr__("DB_PASSWORD"),
