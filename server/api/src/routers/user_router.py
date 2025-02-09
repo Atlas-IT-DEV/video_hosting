@@ -27,12 +27,15 @@ async def get_user_by_id(id: int):
 
 @router.post("/")
 async def create_user(user: User):
-    user_id = user_repository.create_user(User(**user.model_dump()))
+    create_user = user_repository.create_user(User(**user.model_dump()))
 
-    if not user_id:
+    if not create_user:
         raise HTTPException(status_code=500, detail=f"User with this id, email or phone already exists")
 
-    return {"message" : f"User with id {user_id} create success"}
+    return {
+        "message" : "User create success",
+        "data" : create_user
+    }
 
 
 @router.put("/{id}")
@@ -44,7 +47,7 @@ async def update_user(id: int, user: User):
 
     return  {
         "message" : f"User with id {id} update success",
-        "new_user_data" : result
+        "data" : result
     }
 
 

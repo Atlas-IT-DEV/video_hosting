@@ -11,7 +11,7 @@ from config import Config
 # from src.routers.module_router import router as module_router
 # from src.routers.course_router import router as course_router
 # from src.routers.custom_color_router import router as custom_color_router
-# from src.routers.image_router import router as image_router
+from src.routers.color_config_router import router as color_config_router
 from src.routers.user_router import router as user_router
 # from src.routers.users_courses_router import router as users_courses_router
 # from src.routers.users_views_router import router as users_views_router
@@ -52,7 +52,7 @@ def redirect_to_swagger():
 
 # app.include_router(custom_color_router)
 
-# app.include_router(image_router)
+app.include_router(color_config_router)
 
 app.include_router(user_router)
 

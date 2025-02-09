@@ -1,7 +1,8 @@
-from fastapi import APIRouter, HTTPException
-from video_hosting.server.api.src.core.repository import config_color_repository
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from src.core.repository import config_color_repository
 from src.core.models.models import ColorConfig
-import typing
+from typing import List, Optional, Annotated
+from src.utils.file_operation import check_image_formant, get_file_format
 
 router = APIRouter(
     prefix="/api/color/config",
@@ -20,31 +21,85 @@ async def get_config_color_by_id(id: int):
     config_color = config_color_repository.get_config_color_by_id(id)
     
     if not config_color:
-        raise HTTPException(status_code=404, detail=f"ColorConfig with id {id} not found")
+        raise HTTPException(status_code=404, detail=f"Color config with id {id} not found")
     
     return config_color
 
 
 @router.post("/")
-async def create_config_color(config_color: ColorConfig):
-    config_color_id = config_color_repository.create_config_color(ColorConfig(**config_color.model_dump()))
+async def create_config_color(
+    custom_color_1: Annotated[str, Form()] = None,
+    custom_color_2: Annotated[str, Form()] = None,
+    custom_color_3: Annotated[str, Form()] = None,
+    custom_color_4: Annotated[str, Form()] = None, 
+    custom_color_5: Annotated[str, Form()] = None,
+    files: Optional[List[UploadFile]] = File(None)
+):
+    if files:
+        result = check_image_formant(files)
 
-    if not config_color_id:
+        if not result:
+            raise HTTPException(status_code=500, detail={
+                    "status": "error",
+                    "msg": f"All image must be in png/jpg/jpeg format"
+                })
+
+    color_config = ColorConfig(
+        id=0,
+        custom_color_1=custom_color_1, 
+        custom_color_2=custom_color_2,
+        custom_color_3=custom_color_3, 
+        custom_color_4=custom_color_4, 
+        custom_color_5=custom_color_5
+    )
+    
+    create_color_config = config_color_repository.create_config_color(color_config, files)
+
+    if not create_color_config:
         raise HTTPException(status_code=500, detail=f"All colors must be hex-color string")
 
-    return {"message" : f"ColorConfig with id {config_color_id} create success"}
+    return {
+        "message" : "User create success",
+        "data" : create_color_config
+    }
 
 
 @router.put("/{id}")
-async def update_config_color(id: int, config_color: ColorConfig):
-    result = config_color_repository.update_config_color(id, config_color)
+async def update_config_color(
+    id: int,
+    custom_color_1: Annotated[str, Form()] = None,
+    custom_color_2: Annotated[str, Form()] = None,
+    custom_color_3: Annotated[str, Form()] = None,
+    custom_color_4: Annotated[str, Form()] = None, 
+    custom_color_5: Annotated[str, Form()] = None,
+    files: Optional[List[UploadFile]] = File(None)                              
+):
+    if files:
+        result = check_image_formant(files)
+
+        if not result:
+            raise HTTPException(status_code=500, detail={
+                    "status": "error",
+                    "msg": f"All image must be in png/jpg/jpeg format"
+                })
+        
+    color_config = ColorConfig(
+        id=id,
+        custom_color_1=custom_color_1, 
+        custom_color_2=custom_color_2,
+        custom_color_3=custom_color_3, 
+        custom_color_4=custom_color_4, 
+        custom_color_5=custom_color_5
+    )
+        
+    result = config_color_repository.update_config_color(id, color_config, files)
 
     if not result:
         raise HTTPException(status_code=404, detail=f"Color config with id {id} not found")
 
     return  {
-        "message" : f"ColorConfig with id {id} update success",
-        "new_config_color_data" : result
+        "message" : f"Color config with id {id} update success",
+        "data" : result
     }
 
 
@@ -55,4 +110,4 @@ async def delete_config_color(id: int):
     if not result:
         raise HTTPException(status_code=404, detail=f"Color config with id {id} not found")
 
-    return {"message" : "ColorConfig delete success"}
+    return {"message" : "Color config delete success"}

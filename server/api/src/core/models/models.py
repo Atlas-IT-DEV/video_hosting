@@ -48,10 +48,16 @@ class ColorConfig(BaseModel):
     custom_color_3: str | None
     custom_color_4: str | None
     custom_color_5: str | None
-    
-    # get from table  images
-    images: list | None
-    
+
+
+class Image(BaseModel):
+    id: int
+    type: str
+    level: str
+    position: int	
+    object_id: int
+    path: str
+
 
 
 # class ProductImages(BaseModel):

@@ -35,7 +35,8 @@ def create_user(user: User):
               user.country, user.phone, user.role, user.additional_data)
     
     cursor = db.execute_query(query, params)
-    return user.id
+
+    return get_user_by_id(user.id)
 
 
 def update_user(id: int, user: User):
@@ -88,7 +89,7 @@ def update_user(id: int, user: User):
         
         db.execute_query(query, params)
 
-        return get_user_by_id(user.id)
+        return get_user_by_id(id)
     except:
         return False
 
