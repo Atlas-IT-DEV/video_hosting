@@ -61,6 +61,26 @@ class Course(BaseModel):
     created_at: int | None
 
 
+class Module(BaseModel):
+    id: int
+    course_id: int | None
+    title: str | None
+    description: str | None
+    position: int | None
+    created_at: int | None
+
+
+class Video(BaseModel):
+    id: int
+    module_id: int | None
+    title: str | None
+    description: str | None
+    position: int | None
+    video_url: str | None
+    created_at: int | None
+
+
+
 # class ProductImages(BaseModel):
 #     """
 #     Model of product images

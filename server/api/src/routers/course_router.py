@@ -1,6 +1,8 @@
-from fastapi import APIRouter, HTTPException
+from typing import Annotated, List, Optional
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile
 from src.core.repository import course_repository
 from src.core.models.models import Course
+from src.utils.file_operation import check_image_formant
 
 
 router = APIRouter(
@@ -26,8 +28,25 @@ async def get_course_by_id(id: int):
 
 
 @router.post("/")
-async def create_course(course: Course):
-    create_course = course_repository.create_course(Course(**course.model_dump()))
+async def create_course(
+    color_config_id: Annotated[int, Form()] = None,
+    title: Annotated[str, Form()] = None,
+    description: Annotated[str, Form()] = None,
+    created_at: Annotated[int, Form()] = None, 
+    files: Optional[List[UploadFile]] = File(None)
+):
+    if files:
+        result = check_image_formant(files)
+
+        if not result:
+            raise HTTPException(status_code=500, detail={
+                    "status": "error",
+                    "msg": f"All image must be in png/jpg/jpeg format"
+                })
+        
+    course = Course(id=0, color_config_id=color_config_id, title=title, description=description, created_at=created_at)
+
+    create_course = course_repository.create_course(course, files)
 
     if not create_course:
         raise HTTPException(status_code=500, detail=f"Course with this title already exists")
@@ -39,8 +58,26 @@ async def create_course(course: Course):
 
 
 @router.put("/{id}")
-async def update_course(id: int, course: Course):
-    result = course_repository.update_course(id, course)
+async def update_course(
+    id: int,
+    color_config_id: Annotated[int, Form()] = None,
+    title: Annotated[str, Form()] = None,
+    description: Annotated[str, Form()] = None,
+    created_at: Annotated[int, Form()] = None, 
+    files: Optional[List[UploadFile]] = File(None)                            
+):
+    if files:
+        result = check_image_formant(files)
+
+        if not result:
+            raise HTTPException(status_code=500, detail={
+                    "status": "error",
+                    "msg": f"All image must be in png/jpg/jpeg format"
+                })
+    
+    course = Course(id=id, color_config_id=color_config_id, title=title, description=description, created_at=created_at)
+
+    result = course_repository.update_course(id, course, files)
 
     if not result:
         raise HTTPException(status_code=404, detail=f"Course with id {id} or color config with id {course.color_config_id} not found")

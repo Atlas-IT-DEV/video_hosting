@@ -8,8 +8,8 @@ from src.utils.custom_logging import setup_logging
 from config import Config
 
 # from src.routers.video_router import router as video_router
-# from src.routers.module_router import router as module_router
-# from src.routers.course_router import router as course_router
+from src.routers.video_router import router as video_router
+from src.routers.module_router import router as module_router
 from src.routers.course_router import router as course_router
 from src.routers.color_config_router import router as color_config_router
 from src.routers.user_router import router as user_router
@@ -46,9 +46,9 @@ def redirect_to_swagger():
 
 # app.include_router(video_router)
 
-# app.include_router(module_router)
+app.include_router(video_router)
 
-# app.include_router(course_router)
+app.include_router(module_router)
 
 app.include_router(course_router)
 
