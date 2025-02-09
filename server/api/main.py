@@ -2,7 +2,7 @@ from pathlib import Path
 from fastapi import FastAPI, HTTPException, Request
 from fastapi.staticfiles import StaticFiles
 from fastapi.middleware.cors import CORSMiddleware
-from fastapi.responses import RedirectResponse
+from fastapi.responses import RedirectResponse, FileResponse
 
 from src.utils.custom_logging import setup_logging
 from config import Config
@@ -19,9 +19,10 @@ from src.routers.user_router import router as user_router
 app = FastAPI(
     title="Videohosting API", 
     description="Данная API предназначена для работы видеохостинга", 
-    version="1.0.0"
+    version="1.0.0",
 )
 
+favicon_path = './favicon.ico'
 config = Config()
 log = setup_logging()
  
@@ -34,6 +35,10 @@ app.add_middleware(
 )
 
 app.mount("/public", StaticFiles(directory=Path("./public")), name="public")
+
+@app.get('/favicon.ico', include_in_schema=False)
+async def favicon():
+    return FileResponse(favicon_path)
 
 @app.get("/")
 def redirect_to_swagger():
