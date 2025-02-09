@@ -1,10 +1,4 @@
-from pydantic import (BaseModel, Field, StrictStr, Json, condecimal,
-                      StrictInt, PrivateAttr, SecretBytes, StrictBytes, StrictBool, model_validator)
-from enum import Enum
-from typing import Optional, List
-from datetime import datetime
-import os
-from pathlib import Path
+from pydantic import BaseModel
 
 
 # class CharacteristicTypeEnum(StrictStr, Enum):
@@ -58,6 +52,13 @@ class Image(BaseModel):
     object_id: int
     path: str
 
+
+class Course(BaseModel):
+    id: int
+    color_config_id: int | None
+    title: str | None
+    description: str | None
+    created_at: int | None
 
 
 # class ProductImages(BaseModel):

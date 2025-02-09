@@ -1,7 +1,7 @@
-from src.core.models.models import User
 from src.core.repository import user_repository
 
 def checkEntityAlreadyExists(entity_type, data):
+    # check by main personal data
     if entity_type == 'user':
         
         result = user_repository.get_user_by_id(data.id)
@@ -18,5 +18,5 @@ def checkEntityAlreadyExists(entity_type, data):
 
         if result:
             return False
-
+        
     return True

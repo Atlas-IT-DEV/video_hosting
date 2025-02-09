@@ -1,19 +1,39 @@
 from src.core.database.database import db
 from src.core.models.models import Image
+from config import Config
+
+config = Config()
 
 def get_all_images():
     query = "SELECT * FROM Images"
-    return db.fetch_all(query)
+    images = db.fetch_all(query)
+
+    if images:
+        for image in images:
+            image['full_path'] = f"{config.__getattr__("PROTOCOL")}://{config.__getattr__("HOST")}:{config.__getattr__("SERVER_PORT")}/{image['path']}"
+
+    return images
 
 
 def get_image_by_id(image_id: int):
     query = "SELECT * FROM Images WHERE id=%s"
-    return db.fetch_one(query, (image_id,))
+    image = db.fetch_one(query, (image_id,))
+
+    if image:
+        image['full_path'] = f"{config.__getattr__("PROTOCOL")}://{config.__getattr__("HOST")}:{config.__getattr__("SERVER_PORT")}/{image['path']}"
+
+    return image
 
 
 def get_image_by_object_id_and_type(object_id: int, type: str):
     query = "SELECT * FROM Images WHERE object_id=%s AND type=%s"
-    return db.fetch_all(query, (object_id, type,))
+    images = db.fetch_all(query, (object_id, type,))
+
+    if images:
+        for image in images:
+            image['full_path'] = f"{config.__getattr__("PROTOCOL")}://{config.__getattr__("HOST")}:{config.__getattr__("SERVER_PORT")}/{image['path']}"
+
+    return images
 
 
 def create_image(image: Image):

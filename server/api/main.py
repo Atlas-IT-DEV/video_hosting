@@ -10,7 +10,7 @@ from config import Config
 # from src.routers.video_router import router as video_router
 # from src.routers.module_router import router as module_router
 # from src.routers.course_router import router as course_router
-# from src.routers.custom_color_router import router as custom_color_router
+from src.routers.course_router import router as course_router
 from src.routers.color_config_router import router as color_config_router
 from src.routers.user_router import router as user_router
 # from src.routers.users_courses_router import router as users_courses_router
@@ -50,7 +50,7 @@ def redirect_to_swagger():
 
 # app.include_router(course_router)
 
-# app.include_router(custom_color_router)
+app.include_router(course_router)
 
 app.include_router(color_config_router)
 
