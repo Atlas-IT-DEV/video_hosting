@@ -1,6 +1,7 @@
 from src.core.database.database import db
 from src.core.models.models import User
 from src.core.repository.common_tools import checkEntityAlreadyExists
+from src.core.repository import user_courses_repository
 
 
 def get_all_users():
@@ -10,17 +11,33 @@ def get_all_users():
 
 def get_user_by_id(user_id: int):
     query = "SELECT * FROM Users WHERE id=%s"
+    user = db.fetch_one(query, (user_id,))
+    
+    if user:
+        user['curses'] = user_courses_repository.get_simple_user_course_by_user_id(user_id)
+    
+    return user
+
+
+def get_simple_user_by_id(user_id: int):
+    query = "SELECT * FROM Users WHERE id=%s"
     return db.fetch_one(query, (user_id,))
 
 
 def get_user_by_email(email: str):
     query = "SELECT * FROM Users WHERE email=%s"
-    return db.fetch_one(query, (email,))
+    user = db.fetch_one(query, (email,))
+    
+    if user:
+        user['curses'] = user_courses_repository.get_simple_user_course_by_user_id(user['id'])
+    
+    return user
 
 
 def get_user_by_phone(phone: str):
     query = "SELECT * FROM Users WHERE phone=%s"
     return db.fetch_one(query, (phone,))
+
 
 def create_user(user: User):
     result_check = checkEntityAlreadyExists('user', user)

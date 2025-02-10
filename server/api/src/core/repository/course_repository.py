@@ -33,6 +33,19 @@ def get_course_by_id(course_id: int):
     return course
 
 
+def get_simple_course_by_id_with_color_config_and_images(course_id: int):
+    query = "SELECT * FROM Courses WHERE id=%s"
+    course = db.fetch_one(query, (course_id,))
+
+    if course:
+        course['color_config'] = get_config_color_by_id(course['color_config_id'])
+        course['images'] = images_repository.get_image_by_object_id_and_type(course_id, 'course')
+        
+        del course['color_config_id']
+
+    return course
+
+
 def get_course_by_title(title: str):
     query = "SELECT * FROM Courses WHERE title=%s"
     course = db.fetch_one(query, (title,))

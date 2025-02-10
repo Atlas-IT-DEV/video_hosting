@@ -7,19 +7,18 @@ from fastapi.responses import RedirectResponse, FileResponse
 from src.utils.custom_logging import setup_logging
 from config import Config
 
-# from src.routers.video_router import router as video_router
 from src.routers.video_router import router as video_router
 from src.routers.module_router import router as module_router
 from src.routers.course_router import router as course_router
 from src.routers.color_config_router import router as color_config_router
 from src.routers.user_router import router as user_router
-# from src.routers.users_courses_router import router as users_courses_router
+from src.routers.user_courses_router import router as user_courses_router
 # from src.routers.users_views_router import router as users_views_router
 
 app = FastAPI(
     title="Videohosting API", 
     description="Данная API предназначена для работы видеохостинга", 
-    version="1.0.0",
+    version="1.0.2",
 )
 
 favicon_path = './favicon.ico'
@@ -56,7 +55,7 @@ app.include_router(color_config_router)
 
 app.include_router(user_router)
 
-# app.include_router(users_courses_router)
+app.include_router(user_courses_router)
 
 # app.include_router(users_views_router)
 

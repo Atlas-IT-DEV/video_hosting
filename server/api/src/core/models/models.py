@@ -78,6 +78,19 @@ class Video(BaseModel):
     position: int | None
     video_url: str | None
     created_at: int | None
+    
+    
+class UserCourse(BaseModel):
+    id: int
+    user_id: int
+    course_id: int
+
+
+class CourseKey(BaseModel):
+    id: int
+    text_key: str
+    course_id: int
+    status: str
 
 
 
