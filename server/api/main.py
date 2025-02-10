@@ -13,7 +13,7 @@ from src.routers.course_router import router as course_router
 from src.routers.color_config_router import router as color_config_router
 from src.routers.user_router import router as user_router
 from src.routers.user_courses_router import router as user_courses_router
-# from src.routers.users_views_router import router as users_views_router
+from src.routers.course_key_router import router as course_key_router
 
 app = FastAPI(
     title="Videohosting API", 
@@ -57,7 +57,7 @@ app.include_router(user_router)
 
 app.include_router(user_courses_router)
 
-# app.include_router(users_views_router)
+app.include_router(course_key_router)
 
 if __name__ == "__main__":
     import logging
