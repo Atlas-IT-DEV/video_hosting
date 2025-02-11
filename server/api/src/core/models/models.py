@@ -72,6 +72,14 @@ class CourseKey(BaseModel):
     status: str = "A"
 
 
+class VideoView(BaseModel):
+    id: int
+    user_id: int
+    video_id: int
+    module_id: int | None
+    course_id: int | None
+
+
 class CourseKeyStatusEnum(StrictStr, Enum):
     ACTIVE = 'A'
     INACTIVE = 'I'

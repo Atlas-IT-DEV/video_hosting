@@ -13,12 +13,13 @@ from src.routers.course_router import router as course_router
 from src.routers.color_config_router import router as color_config_router
 from src.routers.user_router import router as user_router
 from src.routers.user_courses_router import router as user_courses_router
+from src.routers.video_view_router import router as video_view_router
 from src.routers.course_key_router import router as course_key_router
 
 app = FastAPI(
     title="Videohosting API", 
     description="Данная API предназначена для работы видеохостинга", 
-    version="1.0.2",
+    version="1.0.3",
 )
 
 favicon_path = './favicon.ico'
@@ -35,6 +36,7 @@ app.add_middleware(
 
 app.mount("/public", StaticFiles(directory=Path("./public")), name="public")
 
+# common section
 @app.get('/favicon.ico', include_in_schema=False)
 async def favicon():
     return FileResponse(favicon_path)
@@ -43,8 +45,7 @@ async def favicon():
 def redirect_to_swagger():
     return RedirectResponse(url="/docs")
 
-# app.include_router(video_router)
-
+# routers section
 app.include_router(video_router)
 
 app.include_router(module_router)
@@ -58,6 +59,8 @@ app.include_router(user_router)
 app.include_router(user_courses_router)
 
 app.include_router(course_key_router)
+
+app.include_router(video_view_router)
 
 if __name__ == "__main__":
     import logging
