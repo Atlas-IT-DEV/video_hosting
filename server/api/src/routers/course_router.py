@@ -1,8 +1,10 @@
 from typing import Annotated, List, Optional
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile, Depends
 from src.core.repository import course_repository
 from src.core.models.models import Course
 from src.utils.file_operation import check_image_formant
+from src.secure.main_secure import role_required
+from src.secure.secure_entity import Role
 
 
 router = APIRouter(
@@ -12,17 +14,27 @@ router = APIRouter(
 
 
 @router.get("/")
-async def get_courses():
+async def get_courses(secure_data: dict = Depends(role_required(Role.USER))):
     page = course_repository.get_all_courses()
     return page
 
 
 @router.get("/{id}")
-async def get_course_by_id(id: int):
+async def get_course_by_id(id: int, secure_data: dict = Depends(role_required(Role.USER))):
     course = course_repository.get_course_by_id(id)
     
     if not course:
         raise HTTPException(status_code=404, detail=f"Course with id {id} not found")
+    
+    return course
+
+
+@router.get("/{title}")
+async def get_course_by_title(title: str, secure_data: dict = Depends(role_required(Role.USER))):
+    course = course_repository.get_course_by_title(title)
+    
+    if not course:
+        raise HTTPException(status_code=404, detail=f"Course with title {title} not found")
     
     return course
 
@@ -33,7 +45,8 @@ async def create_course(
     title: Annotated[str, Form()] = None,
     description: Annotated[str, Form()] = None,
     created_at: Annotated[int, Form()] = None, 
-    files: Optional[List[UploadFile]] = File(None)
+    files: Optional[List[UploadFile]] = File(None),
+    secure_data: dict = Depends(role_required(Role.MANAGER))
 ):
     if files:
         result = check_image_formant(files)
@@ -64,7 +77,8 @@ async def update_course(
     title: Annotated[str, Form()] = None,
     description: Annotated[str, Form()] = None,
     created_at: Annotated[int, Form()] = None, 
-    files: Optional[List[UploadFile]] = File(None)                            
+    files: Optional[List[UploadFile]] = File(None),
+    secure_data: dict = Depends(role_required(Role.MANAGER))                            
 ):
     if files:
         result = check_image_formant(files)
@@ -89,7 +103,7 @@ async def update_course(
 
 
 @router.delete("/{id}")
-async def delete_course(id: int):
+async def delete_course(id: int, secure_data: dict = Depends(role_required(Role.MANAGER))):
     result = course_repository.delete_course_by_id(id)
     
     if not result:

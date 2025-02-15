@@ -1,8 +1,10 @@
 from typing import Annotated, List, Optional
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile, Depends
 from src.core.repository import module_repository
 from src.core.models.models import Module
 from src.utils.file_operation import check_image_formant
+from src.secure.main_secure import role_required
+from src.secure.secure_entity import Role
 
 
 router = APIRouter(
@@ -12,17 +14,27 @@ router = APIRouter(
 
 
 @router.get("/")
-async def get_modules():
+async def get_modules(secure_data: dict = Depends(role_required(Role.USER))):
     page = module_repository.get_all_modules()
     return page
 
 
 @router.get("/{id}")
-async def get_module_by_id(id: int):
+async def get_module_by_id(id: int, secure_data: dict = Depends(role_required(Role.USER))):
     module = module_repository.get_module_by_id(id)
     
     if not module:
         raise HTTPException(status_code=404, detail=f"Module with id {id} not found")
+    
+    return module
+
+
+@router.get("/{title}")
+async def get_module_by_title(title: str, secure_data: dict = Depends(role_required(Role.USER))):
+    module = module_repository.get_module_by_title(title)
+    
+    if not module:
+        raise HTTPException(status_code=404, detail=f"Module with title {title} not found")
     
     return module
 
@@ -34,7 +46,8 @@ async def create_module(
     description: Annotated[str, Form()] = None,
     position: Annotated[int, Form()] = None,
     created_at: Annotated[int, Form()] = None, 
-    files: Optional[List[UploadFile]] = File(None)
+    files: Optional[List[UploadFile]] = File(None),
+    secure_data: dict = Depends(role_required(Role.MANAGER))
 ):
     if files:
         result = check_image_formant(files)
@@ -66,7 +79,8 @@ async def update_module(
     description: Annotated[str, Form()] = None,
     position: Annotated[int, Form()] = None,
     created_at: Annotated[int, Form()] = None, 
-    files: Optional[List[UploadFile]] = File(None)                            
+    files: Optional[List[UploadFile]] = File(None),
+    secure_data: dict = Depends(role_required(Role.MANAGER))                          
 ):
     if files:
         result = check_image_formant(files)
@@ -91,7 +105,7 @@ async def update_module(
 
 
 @router.delete("/{id}")
-async def delete_module(id: int):
+async def delete_module(id: int, secure_data: dict = Depends(role_required(Role.MANAGER))):
     result = module_repository.delete_module_by_id(id)
     
     if not result:

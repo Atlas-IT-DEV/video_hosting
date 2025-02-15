@@ -1,7 +1,9 @@
-from fastapi import APIRouter, HTTPException
+from fastapi import APIRouter, HTTPException, Depends
 from src.core.repository import user_courses_repository
 from src.core.models.models import UserCourse
-import typing
+from src.secure.main_secure import role_required
+from src.secure.secure_entity import Role
+
 
 router = APIRouter(
     prefix="/api/users/curses",
@@ -10,13 +12,13 @@ router = APIRouter(
 
 
 @router.get("/")
-async def get_user_courses():
+async def get_user_courses(secure_data: dict = Depends(role_required(Role.USER))):
     page = user_courses_repository.get_all_user_courses()
     return page
 
 
 @router.get("/common/{id}")
-async def get_user_course_by_id(id: int):
+async def get_user_course_by_id(id: int, secure_data: dict = Depends(role_required(Role.USER))):
     user_course = user_courses_repository.get_user_course_by_id(id)
     
     if not user_course:
@@ -26,7 +28,7 @@ async def get_user_course_by_id(id: int):
 
 
 @router.get("/user/{id}")
-async def get_user_course_by_user_id(user_id: int):
+async def get_user_course_by_user_id(user_id: int, secure_data: dict = Depends(role_required(Role.USER))):
     user_courses = user_courses_repository.get_user_course_by_user_id(user_id)
     
     if not user_courses:
@@ -36,7 +38,7 @@ async def get_user_course_by_user_id(user_id: int):
 
 
 @router.get("/course/{id}")
-async def get_user_course_by_course_id(course_id: int):
+async def get_user_course_by_course_id(course_id: int, secure_data: dict = Depends(role_required(Role.USER))):
     user_courses = user_courses_repository.get_user_course_by_course_id(course_id)
     
     if not user_courses:
@@ -46,7 +48,7 @@ async def get_user_course_by_course_id(course_id: int):
 
 
 @router.post("/")
-async def create_user_course(user_course: UserCourse):
+async def create_user_course(user_course: UserCourse, secure_data: dict = Depends(role_required(Role.USER))):
     create_user_course = user_courses_repository.create_user_course(UserCourse(**user_course.model_dump()))
 
     if not create_user_course:
@@ -59,7 +61,7 @@ async def create_user_course(user_course: UserCourse):
 
 
 @router.delete("/{id}")
-async def delete_user_course(id: int):
+async def delete_user_course(id: int, secure_data: dict = Depends(role_required(Role.MANAGER))):
     result = user_courses_repository.delete_user_course_by_id(id)
     
     if not result:

@@ -1,8 +1,10 @@
 from typing import Annotated, List, Optional
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile, Depends
 from src.core.repository import video_repository
 from src.core.models.models import Video
 from src.utils.file_operation import check_image_formant
+from src.secure.main_secure import role_required
+from src.secure.secure_entity import Role
 
 
 router = APIRouter(
@@ -12,17 +14,27 @@ router = APIRouter(
 
 
 @router.get("/")
-async def get_videos():
+async def get_videos(secure_data: dict = Depends(role_required(Role.USER))):
     page = video_repository.get_all_videos()
     return page
 
 
 @router.get("/{id}")
-async def get_video_by_id(id: int):
+async def get_video_by_id(id: int, secure_data: dict = Depends(role_required(Role.USER))):
     video = video_repository.get_video_by_id(id)
     
     if not video:
         raise HTTPException(status_code=404, detail=f"Video with id {id} not found")
+    
+    return video
+
+
+@router.get("/{title}")
+async def get_video_by_title(title: str, secure_data: dict = Depends(role_required(Role.USER))):
+    video = video_repository.get_video_by_title(title)
+    
+    if not video:
+        raise HTTPException(status_code=404, detail=f"Video with title {title} not found")
     
     return video
 
@@ -35,7 +47,8 @@ async def create_video(
     position: Annotated[int, Form()] = None,
     video_url: Annotated[str, Form()] = None,
     created_at: Annotated[int, Form()] = None, 
-    files: Optional[List[UploadFile]] = File(None)
+    files: Optional[List[UploadFile]] = File(None),
+    secure_data: dict = Depends(role_required(Role.MANAGER)),
 ):
     if files:
         result = check_image_formant(files)
@@ -68,7 +81,8 @@ async def update_video(
     position: Annotated[int, Form()] = None,
     video_url: Annotated[str, Form()] = None,
     created_at: Annotated[int, Form()] = None, 
-    files: Optional[List[UploadFile]] = File(None)                            
+    files: Optional[List[UploadFile]] = File(None),
+    secure_data: dict = Depends(role_required(Role.MANAGER))                       
 ):
     if files:
         result = check_image_formant(files)
@@ -93,7 +107,7 @@ async def update_video(
 
 
 @router.delete("/{id}")
-async def delete_video(id: int):
+async def delete_video(id: int, secure_data: dict = Depends(role_required(Role.MANAGER))):
     result = video_repository.delete_video_by_id(id)
     
     if not result:

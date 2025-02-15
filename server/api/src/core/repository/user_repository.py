@@ -36,7 +36,12 @@ def get_user_by_email(email: str):
 
 def get_user_by_phone(phone: str):
     query = "SELECT * FROM Users WHERE phone=%s"
-    return db.fetch_one(query, (phone,))
+    user = db.fetch_one(query, (phone,))
+    
+    if user:
+        user['curses'] = user_courses_repository.get_simple_user_course_by_user_id(user['id'])
+    
+    return user
 
 
 def create_user(user: User):

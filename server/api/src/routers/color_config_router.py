@@ -1,8 +1,11 @@
-from fastapi import APIRouter, HTTPException, UploadFile, File, Form
+from fastapi import APIRouter, HTTPException, UploadFile, File, Form, Depends
 from src.core.repository import config_color_repository
 from src.core.models.models import ColorConfig
 from typing import List, Optional, Annotated
-from src.utils.file_operation import check_image_formant, get_file_format
+from src.utils.file_operation import check_image_formant
+from src.secure.main_secure import role_required
+from src.secure.secure_entity import Role
+
 
 router = APIRouter(
     prefix="/api/color/config",
@@ -11,13 +14,13 @@ router = APIRouter(
 
 
 @router.get("/")
-async def get_config_colors():
+async def get_config_colors(secure_data: dict = Depends(role_required(Role.MANAGER))):
     page = config_color_repository.get_all_config_colors()
     return page
 
 
 @router.get("/{id}")
-async def get_config_color_by_id(id: int):
+async def get_config_color_by_id(id: int, secure_data: dict = Depends(role_required(Role.MANAGER))):
     config_color = config_color_repository.get_config_color_by_id(id)
     
     if not config_color:
@@ -33,7 +36,8 @@ async def create_config_color(
     custom_color_3: Annotated[str, Form()] = None,
     custom_color_4: Annotated[str, Form()] = None, 
     custom_color_5: Annotated[str, Form()] = None,
-    files: Optional[List[UploadFile]] = File(None)
+    files: Optional[List[UploadFile]] = File(None),
+    secure_data: dict = Depends(role_required(Role.MANAGER))
 ):
     if files:
         result = check_image_formant(files)
@@ -72,7 +76,8 @@ async def update_config_color(
     custom_color_3: Annotated[str, Form()] = None,
     custom_color_4: Annotated[str, Form()] = None, 
     custom_color_5: Annotated[str, Form()] = None,
-    files: Optional[List[UploadFile]] = File(None)                              
+    files: Optional[List[UploadFile]] = File(None),
+    secure_data: dict = Depends(role_required(Role.MANAGER))                              
 ):
     if files:
         result = check_image_formant(files)
@@ -104,7 +109,7 @@ async def update_config_color(
 
 
 @router.delete("/{id}")
-async def delete_config_color(id: int):
+async def delete_config_color(id: int, secure_data: dict = Depends(role_required(Role.MANAGER))):
     result = config_color_repository.delete_config_color_by_id(id)
     
     if not result:
