@@ -63,7 +63,7 @@ async def create_config_color(
         raise HTTPException(status_code=500, detail=f"All colors must be hex-color string")
 
     return {
-        "message" : "User create success",
+        "message" : "Color config create success",
         "data" : create_color_config
     }
 
