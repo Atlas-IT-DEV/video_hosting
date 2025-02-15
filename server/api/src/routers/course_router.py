@@ -29,7 +29,7 @@ async def get_course_by_id(id: int, secure_data: dict = Depends(role_required(Ro
     return course
 
 
-@router.get("/{title}")
+@router.get("/title/{title}")
 async def get_course_by_title(title: str, secure_data: dict = Depends(role_required(Role.USER))):
     course = course_repository.get_course_by_title(title)
     

@@ -29,7 +29,7 @@ async def get_module_by_id(id: int, secure_data: dict = Depends(role_required(Ro
     return module
 
 
-@router.get("/{title}")
+@router.get("/title/{title}")
 async def get_module_by_title(title: str, secure_data: dict = Depends(role_required(Role.USER))):
     module = module_repository.get_module_by_title(title)
     

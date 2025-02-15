@@ -29,7 +29,7 @@ async def get_video_by_id(id: int, secure_data: dict = Depends(role_required(Rol
     return video
 
 
-@router.get("/{title}")
+@router.get("/title/{title}")
 async def get_video_by_title(title: str, secure_data: dict = Depends(role_required(Role.USER))):
     video = video_repository.get_video_by_title(title)
     

@@ -97,10 +97,16 @@ async def create_user(user: User):
 
     if not create_user:
         raise HTTPException(status_code=500, detail=f"User with this id, email or phone already exists")
+    
+    access_token = create_token({"sub": user.email, "role": user["role"]}, timedelta(minutes=ACCESS_TOKEN_EXPIRE_MINUTES))
+    refresh_token = create_token({"sub": user.email}, timedelta(days=REFRESH_TOKEN_EXPIRE_DAYS))
 
     return {
         "message" : "User create success",
-        "data" : create_user
+        "data" : create_user,
+        "access_token": access_token, 
+        "refresh_token": refresh_token, 
+        "token_type": "bearer"
     }
 
 
