@@ -68,15 +68,15 @@ def role_required(min_role: str):
         if ROLE_HIERARCHY.get(user_role, 0) < ROLE_HIERARCHY.get(min_role, 0):
             support_str = min_role.__str__()
 
-            if support_str == 'A':
+            if support_str == Role.ADMIN:
                 support_str = 'admin'
 
-            if support_str == 'M':
+            if support_str == Role.MANAGER:
                 support_str = 'course manager'
 
-            if support_str == 'U':
+            if support_str == Role.USER:
                 support_str = 'simple user'
 
-            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Not enough permissions. Need be {support_str}")
+            raise HTTPException(status_code=status.HTTP_403_FORBIDDEN, detail=f"Not enough permissions. Need be {support_str}.")
         return user
     return role_dependency

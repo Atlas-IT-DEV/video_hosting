@@ -60,11 +60,12 @@ def check_image_formant(files):
 
 
 # universal download files
-def download_file_for_entity(object_id, type, files):
-    level = "M"
-
+def download_file_for_entity(object_id, type, files, level = "M", create_mode = True):
     for index, file in enumerate(files):
         new_upload_file_path = upload_file(type, file, object_id)
+
+        if not create_mode:
+            return new_upload_file_path
 
         # additional type images
         if index != 0:

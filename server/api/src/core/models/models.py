@@ -83,3 +83,8 @@ class VideoView(BaseModel):
 class CourseKeyStatusEnum(StrictStr, Enum):
     ACTIVE = 'A'
     INACTIVE = 'I'
+
+
+class ImageLevelEnum(StrictStr, Enum):
+    MAIN = 'M'
+    ADDITIONAL = 'A'

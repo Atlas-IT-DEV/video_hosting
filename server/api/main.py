@@ -15,6 +15,7 @@ from src.routers.user_router import router as user_router
 from src.routers.user_courses_router import router as user_courses_router
 from src.routers.video_view_router import router as video_view_router
 from src.routers.course_key_router import router as course_key_router
+from src.routers.image_router import router as image_router
 
 app = FastAPI(
     title="Videohosting API", 
@@ -61,6 +62,8 @@ app.include_router(user_courses_router)
 app.include_router(course_key_router)
 
 app.include_router(video_view_router)
+
+app.include_router(image_router)
 
 if __name__ == "__main__":
     import logging
