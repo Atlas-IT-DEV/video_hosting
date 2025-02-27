@@ -83,4 +83,6 @@ if __name__ == "__main__":
     else:
         raise Exception("Not init debug mode in env file")
     uvicorn.run("main:app", host=config.__getattr__("HOST"), port=int(config.__getattr__("SERVER_PORT")),
+                ssl_keyfile="/etc/letsencrypt/live/me-course.com/privkey.pem" ,
+                ssl_certfile="/etc/letsencrypt/live/me-course.com/fullchain.pem",
                 log_config=uvicorn_log_config, reload=reload)

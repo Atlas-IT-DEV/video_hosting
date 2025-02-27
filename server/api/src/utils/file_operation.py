@@ -54,7 +54,7 @@ def get_file_format(file: UploadFile) -> str:
 
 def check_image_formant(files):
     for file in files:
-        if get_file_format(file) not in ['png', 'jpg', 'jpeg']:
+        if get_file_format(file) not in ['png', 'jpg', 'jpeg', 'webp', 'pdf', 'docx', 'text']:
             return False
     return True
 

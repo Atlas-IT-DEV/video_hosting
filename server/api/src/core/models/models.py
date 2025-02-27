@@ -3,7 +3,7 @@ from pydantic import BaseModel, StrictStr
 
 
 class User(BaseModel):
-    id: int
+    id: str
     email: str | None
     avatar_url: str | None
     first_name: str | None
@@ -61,7 +61,7 @@ class Video(BaseModel):
     
 class UserCourse(BaseModel):
     id: int
-    user_id: int
+    user_id: str
     course_id: int
 
 
@@ -74,7 +74,7 @@ class CourseKey(BaseModel):
 
 class VideoView(BaseModel):
     id: int
-    user_id: int
+    user_id: str
     video_id: int
     module_id: int | None
     course_id: int | None

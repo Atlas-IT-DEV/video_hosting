@@ -15,7 +15,7 @@ def get_video_view_by_id(id: int):
     return db.fetch_one(query, (id,))
 
 
-def get_video_view_by_user_id(user_id: int):
+def get_video_view_by_user_id(user_id: str):
     query = "SELECT * FROM Video_Views WHERE user_id=%s"
     return db.fetch_all(query, (user_id,))
 
@@ -23,6 +23,11 @@ def get_video_view_by_user_id(user_id: int):
 def get_video_view_by_video_id(video_id: int):
     query = "SELECT * FROM Video_Views WHERE video_id=%s"
     return db.fetch_all(query, (video_id,))
+
+
+def get_video_view_by_user_id_and_video_id(video_id: int, user_id: str):
+    query = "SELECT * FROM Video_Views WHERE video_id=%s AND user_id=%s"
+    return db.fetch_all(query, (video_id, user_id,))
 
 
 def get_video_view_by_module_id(module_id: int,):

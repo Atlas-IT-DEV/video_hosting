@@ -27,8 +27,8 @@ async def get_user_course_by_id(id: int, secure_data: dict = Depends(role_requir
     return user_course
 
 
-@router.get("/user/{id}")
-async def get_user_course_by_user_id(user_id: int, secure_data: dict = Depends(role_required(Role.USER))):
+@router.get("/user/{user_id}")
+async def get_user_course_by_user_id(user_id: str, secure_data: dict = Depends(role_required(Role.USER))):
     user_courses = user_courses_repository.get_user_course_by_user_id(user_id)
     
     if not user_courses:
@@ -37,7 +37,7 @@ async def get_user_course_by_user_id(user_id: int, secure_data: dict = Depends(r
     return user_courses
 
 
-@router.get("/course/{id}")
+@router.get("/course/{course_id}")
 async def get_user_course_by_course_id(course_id: int, secure_data: dict = Depends(role_required(Role.USER))):
     user_courses = user_courses_repository.get_user_course_by_course_id(course_id)
     

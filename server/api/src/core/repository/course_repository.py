@@ -19,7 +19,7 @@ def get_all_courses():
     return courses
 
 
-def get_course_by_id(course_id: int):
+def get_course_by_id(course_id: int, user_id: str = None):
     query = "SELECT * FROM Courses WHERE id=%s"
     course = db.fetch_one(query, (course_id,))
 
@@ -28,7 +28,7 @@ def get_course_by_id(course_id: int):
         del course['color_config_id']
 
         course['images'] = images_repository.get_image_by_object_id_and_type(course_id, 'course')
-        course['modules'] = module_repository.get_all_modules_by_course_id(course_id)
+        course['modules'] = module_repository.get_all_modules_by_course_id(course_id, user_id)
 
     return course
 

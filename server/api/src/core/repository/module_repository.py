@@ -17,13 +17,13 @@ def get_all_modules():
     return modules
 
 
-def get_all_modules_by_course_id(course_id):
+def get_all_modules_by_course_id(course_id, user_id: str = None):
     query = "SELECT * FROM Modules WHERE course_id=%s ORDER BY position"
     modules = db.fetch_all(query, (course_id,))
 
     if modules:
         for module in modules:
-            module['videos'] = video_repository.get_all_videos_by_module_id(module['id'])
+            module['videos'] = video_repository.get_all_videos_by_module_id(module['id'], user_id)
             module['images'] = images_repository.get_image_by_object_id_and_type(module['id'], 'module')
 
     return modules

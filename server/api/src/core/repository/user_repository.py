@@ -9,17 +9,18 @@ def get_all_users():
     return db.fetch_all(query)
 
 
-def get_user_by_id(user_id: int):
+def get_user_by_id(user_id: str):
     query = "SELECT * FROM Users WHERE id=%s"
     user = db.fetch_one(query, (user_id,))
     
     if user:
         user['curses'] = user_courses_repository.get_simple_user_course_by_user_id(user_id)
     
+    
     return user
 
 
-def get_simple_user_by_id(user_id: int):
+def get_simple_user_by_id(user_id: str):
     query = "SELECT * FROM Users WHERE id=%s"
     return db.fetch_one(query, (user_id,))
 

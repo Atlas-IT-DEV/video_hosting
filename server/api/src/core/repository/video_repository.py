@@ -2,7 +2,7 @@ from src.core.database.database import db
 from src.core.models.models import Video
 from src.core.repository.config_color_repository import get_config_color_by_id
 from src.utils.file_operation import delete_file_for_entity, download_file_for_entity
-from src.core.repository import images_repository, module_repository
+from src.core.repository import images_repository, module_repository, video_view_repository
 
 
 def get_all_videos():
@@ -16,13 +16,14 @@ def get_all_videos():
     return videos
 
 
-def get_all_videos_by_module_id(module_id):
+def get_all_videos_by_module_id(module_id, user_id: str = None):
     query = "SELECT * FROM Videos WHERE module_id=%s ORDER BY position"
     videos = db.fetch_all(query, (module_id,))
 
     if videos:
         for video in videos:
             video['images'] = images_repository.get_image_by_object_id_and_type(video['id'], 'video')
+            video['was_view'] = True if len(video_view_repository.get_video_view_by_user_id_and_video_id(video['id'], user_id)) else False
 
     return videos
 
