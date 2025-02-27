@@ -1,13 +1,14 @@
-# app/auth/auth_handler.py
-
 import time
 from typing import Dict
-
 import jwt
 
+from config import Config
 
-JWT_SECRET = "please_please_update_me_please"
-JWT_ALGORITHM = "HS256"
+
+config = Config()
+
+JWT_SECRET = config.__getattr__("JWT_SECRET")
+JWT_ALGORITHM = config.__getattr__("JWT_ALGORITHM")
 
 # возврат сгенерированных токенов
 def token_response(token: str):
@@ -15,11 +16,11 @@ def token_response(token: str):
         "access_token": token
     }
     
-# генерация токена со сроком действия 60 минут
+# генерация токена с заданным сроком действия в секундах
 def sign_jwt(user_id: str) -> Dict[str, str]:
     payload = {
         "user_id": user_id,
-        "expires": time.time() + 3600
+        "expires": time.time() + config.__getattr__("TOKEN_TIME_WORK")
     }
     token = jwt.encode(payload, JWT_SECRET, algorithm=JWT_ALGORITHM)
 
