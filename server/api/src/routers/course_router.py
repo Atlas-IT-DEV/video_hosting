@@ -1,14 +1,26 @@
 from typing import Annotated, List, Optional
-from fastapi import APIRouter, File, Form, HTTPException, UploadFile, Depends, Request
+from fastapi import APIRouter, File, Form, HTTPException, UploadFile, Depends, Request, Query
+from fastapi.responses import StreamingResponse
 from src.core.repository import course_repository
 from src.core.models.models import Course
 from src.utils.file_operation import check_image_formant
 from src.secure.main_secure import role_required
 from src.secure.secure_entity import Role
+from src.core.repository import video_repository
+from src.core.repository import module_repository
+from src.core.repository import course_repository
 from minio import Minio
+from src.core.repository.user_repository import get_user_by_id
 import subprocess
 import os
 import aiofiles
+import hashlib
+from datetime import datetime
+import json
+import os
+import uuid
+from fastapi import HTTPException
+from fastapi.responses import JSONResponse
 
 
 router = APIRouter(
@@ -18,12 +30,12 @@ router = APIRouter(
 
 # Подключение к MinIO
 minio_client = Minio(
-    "127.0.0.1:9000",  # Укажите адрес MinIO
-    access_key="minioadmin",
-    secret_key="minioadmin",
-    secure=False
+    "me-course.com:9500",  # Укажите адрес MinIO
+    access_key="admin",
+    secret_key="secretpassword",
+    secure=True
 )
-BUCKET_NAME = "videohosting.videos"
+BUCKET_NAME = "videohosting"
 
 
 
@@ -59,6 +71,7 @@ async def create_course(
     title: Annotated[str, Form()] = None,
     description: Annotated[str, Form()] = None,
     created_at: Annotated[int, Form()] = None, 
+    creator_id: Annotated[str, Form()] = None,
     files: Optional[List[UploadFile]] = File(None),
     secure_data: dict = Depends(role_required(Role.MANAGER))
 ):
@@ -71,7 +84,7 @@ async def create_course(
                     "msg": f"All image must be in png/jpg/jpeg format"
                 })
         
-    course = Course(id=0, color_config_id=color_config_id, title=title, description=description, created_at=created_at)
+    course = Course(id=0, color_config_id=color_config_id, title=title, description=description, created_at=created_at, creator_id=creator_id)
 
     create_course = course_repository.create_course(course, files)
 
@@ -91,6 +104,7 @@ async def update_course(
     title: Annotated[str, Form()] = None,
     description: Annotated[str, Form()] = None,
     created_at: Annotated[int, Form()] = None, 
+    creator_id: Annotated[str, Form()] = None,
     files: Optional[List[UploadFile]] = File(None),
     secure_data: dict = Depends(role_required(Role.MANAGER))                            
 ):
@@ -103,7 +117,7 @@ async def update_course(
                     "msg": f"All image must be in png/jpg/jpeg format"
                 })
     
-    course = Course(id=id, color_config_id=color_config_id, title=title, description=description, created_at=created_at)
+    course = Course(id=id, color_config_id=color_config_id, title=title, description=description, created_at=created_at, creator_id=creator_id)
 
     result = course_repository.update_course(id, course, files)
 
@@ -114,21 +128,30 @@ async def update_course(
         "message" : f"Course with id {id} update success",
         "data" : result
     }
+
 @router.post("/video/upload")
-async def upload_video(file: UploadFile = File(...)):
-    """Загрузка видео в MinIO и конвертация в HLS"""
-    file_path = f"temp/{file.filename}"
-    hls_path = f"temp/hls/{file.filename.split('.')[0]}"
+async def upload_video(user_id: str = Query(..., description="ID пользователя")):
+    """Генерация presigned URL для загрузки видео."""
+    unique_string = f"{user_id}_{datetime.now().timestamp()}"
+    hashed = hashlib.sha256(unique_string.encode()).hexdigest()
+    object_name = f"videos/{user_id}/{hashed}.mp4"
     
-    # Сохраняем временный файл
-    os.makedirs("temp", exist_ok=True)
-    os.makedirs("temp/hls", exist_ok=True)
-    async with aiofiles.open(file_path, "wb") as out_file:
-        while content := await file.read(1024 * 1024):  # Читаем кусками по 1MB
-            await out_file.write(content)
+    presigned_url = minio_client.presigned_put_object(BUCKET_NAME, object_name)
+    
+    return {"upload_url": presigned_url, "video_id": hashed, "object_name": object_name}
+
+@router.post("/video/process")
+async def process_video(object_name: str = Query(..., description="MinIO object name"), user_id: str = Query(..., description="ID пользователя")):
+    """Загрузка видео из MinIO, конвертация в HLS и загрузка обратно."""
+    hashed = object_name.split("/")[-1].replace(".mp4", "")
+    file_path = f"temp/{user_id}/{hashed}.mp4"
+    hls_path = f"temp/{user_id}/hls/{hashed}"
+    os.makedirs(hls_path, exist_ok=True)
+    
+    # Скачивание видео из MinIO
+    minio_client.fget_object(BUCKET_NAME, object_name, file_path)
     
     # Конвертация в HLS
-    os.makedirs(hls_path, exist_ok=True)
     command = [
         "ffmpeg", "-i", file_path, "-profile:v", "baseline", "-level", "3.0",
         "-start_number", "0", "-hls_time", "10", "-hls_list_size", "0",
@@ -138,57 +161,224 @@ async def upload_video(file: UploadFile = File(...)):
     
     # Загрузка HLS в MinIO
     for f in os.listdir(hls_path):
-        minio_client.fput_object(BUCKET_NAME, f"hls/{file.filename.split('.')[0]}/{f}", f"{hls_path}/{f}")
+        minio_client.fput_object(
+            BUCKET_NAME,
+            f"hls/{user_id}/{hashed}/{f}",
+            f"{hls_path}/{f}"
+        )
     
     # Удаление временных файлов
     os.remove(file_path)
     
-    return {"message": "Video uploaded and converted to HLS", "video_id": file.filename.split('.')[0]}
+    return {"message": "Video processed and converted to HLS", "hls_url": f"hls/{user_id}/{hashed}/index.m3u8"}
 
-@router.post("/video/octet/upload")
-async def upload_video(request: Request):
-    """Загрузка видео в MinIO и конвертация в HLS"""
+# @router.get("/video/stream/{video_id}")
+# def get_hls(video_id: str):
+#     """Возвращает ссылку на HLS плейлист, ищет во всех папках бакета"""
+#     try:
+#         # Ищем все объекты в бакете, которые содержат video_id
+#         objects = minio_client.list_objects(BUCKET_NAME, prefix="hls/", recursive=True)
+        
+#         # Ищем объект, который соответствует video_id и является плейлистом HLS
+#         hls_playlist = None
+#         for obj in objects:
+#             if obj.object_name.endswith(f"{video_id}/index.m3u8"):
+#                 hls_playlist = obj.object_name
+#                 break
+        
+#         if not hls_playlist:
+#             raise HTTPException(status_code=404, detail="Video not found")
+        
+#         # Формируем URL для HLS плейлиста
+#         hls_url = f"https://me-course.com:9500/{BUCKET_NAME}/{hls_playlist}"
+#         return {"hls_url": hls_url}
+#     except Exception as e:
+#         raise HTTPException(status_code=500, detail=str(e))
+
+@router.get("/video/stream/{video_id}/{user_id}")
+def get_mp4_from_hls(video_id: str, user_id: str):
+    """Отдаёт MP4-видео с водяным знаком, преобразованное из HLS"""
+    try:
+        user = get_user_by_id(user_id)
+        
+        if not user:
+            raise HTTPException(status_code=404, detail=f"User with id {id} not found")
+        # Ищем HLS-плейлист в MinIO
+        objects = minio_client.list_objects(BUCKET_NAME, prefix="hls/", recursive=True)
+        hls_playlist = next(
+            (obj.object_name for obj in objects if obj.object_name.endswith(f"{video_id}/index.m3u8")), None
+        )
+
+        if not hls_playlist:
+            raise HTTPException(status_code=404, detail="HLS-видео не найдено")
+
+        # Получаем временную ссылку на HLS-плейлист из MinIO
+        hls_url = minio_client.presigned_get_object(BUCKET_NAME, hls_playlist)
+
+
+        # Базовые параметры отрисовки текста
+        font_size = 24
+        font_color = "green"
+        x_position = "10"
+        y_start = 50  # Начальная позиция Y
+        line_spacing = 30  # Расстояние между строками
+        json_data = '{"Имя": "Иван", "Возраст": "30", "Город": "Москва"}'
+        data = json.loads(user['additional_data'])
+
+        # Генерируем drawtext фильтры для каждого ключа-значения
+        drawtext_filters = []
+        for i, (key, value) in enumerate(data.items()):
+            y_position = y_start + i * line_spacing
+            drawtext_filters.append(
+                f"drawtext=text='{key}: {value}':fontsize={font_size}:fontcolor={font_color}:x={x_position}:y={y_position}"
+            )
+
+        # Объединяем фильтры через запятую
+        filter_complex = ",".join(drawtext_filters)
+
+        # Формируем команду FFmpeg
+        command = [
+            "ffmpeg",
+            "-i", hls_url,  # Входной HLS-поток
+            "-vf", filter_complex,  # Фильтр с текстом
+            "-c:v", "libx264",  # Кодек видео
+            "-profile:v", "main",  # Используем основной профиль H.264
+            "-pix_fmt", "yuv420p",  # Формат пикселей для совместимости
+            "-c:a", "aac",  # Кодек аудио
+            "-b:a", "128k",  # Битрейт аудио (128 kbps)
+            "-f", "mp4",  # Формат вывода — MP4
+            "-movflags", "frag_keyframe+empty_moov",  # Прогрессивный MP4
+            "pipe:1"  # Вывод в stdout
+        ]
+
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+
+        # Возвращаем потоковое видео с заголовком о длительности
+        return StreamingResponse(
+            process.stdout,
+            media_type="video/mp4",
+        )
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
     
-    # Получаем название файла из заголовка запроса
-    filename = request.headers.get("X-Filename", "video.mp4")  
-    video_id = filename.split('.')[0]
 
-    # Пути
-    file_path = f"temp/{filename}"
-    hls_path = f"temp/hls/{video_id}"
 
-    # Создаем папки, если их нет
-    os.makedirs("temp", exist_ok=True)
-    os.makedirs("temp/hls", exist_ok=True)
+@router.get("/testvideo/stream/{video_id}/{user_id}")
+def get_mp4_from_hls(video_id: str, user_id: str):
+    """Генерирует MP4-видео с водяным знаком и возвращает ссылку на файл"""
+    try:
+        user = get_user_by_id(user_id)
+        
+        if not user:
+            raise HTTPException(status_code=404, detail=f"User with id {id} not found")
+        
+        # Ищем HLS-плейлист в MinIO
+        objects = minio_client.list_objects(BUCKET_NAME, prefix="hls/", recursive=True)
+        hls_playlist = next(
+            (obj.object_name for obj in objects if obj.object_name.endswith(f"{video_id}/index.m3u8")), None
+        )
 
-    # Читаем бинарные данные и записываем в файл
-    async with aiofiles.open(file_path, "wb") as out_file:
-        while chunk := await request.stream().__anext__():  
-            await out_file.write(chunk)
+        if not hls_playlist:
+            raise HTTPException(status_code=404, detail="HLS-видео не найдено")
 
-    # Конвертация в HLS
-    os.makedirs(hls_path, exist_ok=True)
-    command = [
-        "ffmpeg", "-i", file_path, "-profile:v", "baseline", "-level", "3.0",
-        "-start_number", "0", "-hls_time", "10", "-hls_list_size", "0",
-        "-f", "hls", f"{hls_path}/index.m3u8"
-    ]
-    subprocess.run(command, check=True)
+        # Получаем временную ссылку на HLS-плейлист из MinIO
+        hls_url = minio_client.presigned_get_object(BUCKET_NAME, hls_playlist)
 
-    # Загрузка HLS в MinIO
-    for f in os.listdir(hls_path):
-        minio_client.fput_object(BUCKET_NAME, f"hls/{video_id}/{f}", f"{hls_path}/{f}")
+        # Базовые параметры отрисовки текста
+        font_size = 24
+        font_color = "green"
+        x_position = "10"
+        y_start = 50  # Начальная позиция Y
+        line_spacing = 30  # Расстояние между строками
+        data = json.loads(user['additional_data'])
 
-    # Удаление временного файла
-    os.remove(file_path)
+        # Генерируем drawtext фильтры для каждого ключа-значения
+        drawtext_filters = []
+        for i, (key, value) in enumerate(data.items()):
+            y_position = y_start + i * line_spacing
+            drawtext_filters.append(
+                f"drawtext=text='{key}: {value}':fontsize={font_size}:fontcolor={font_color}:x={x_position}:y={y_position}"
+            )
 
-    return {"message": "Video uploaded and converted to HLS", "video_id": video_id}
+        # Объединяем фильтры через запятую
+        filter_complex = ",".join(drawtext_filters)
 
-@router.get("/video/stream/{video_id}")
-def get_hls(video_id: str):
-    """Возвращает ссылку на HLS плейлист"""
-    hls_url = f"http://me-course.com:9000/{BUCKET_NAME}/hls/{video_id}/index.m3u8"
-    return {"hls_url": hls_url}
+        # Генерируем уникальное имя для временного файла
+        temp_file = f"/tmp/{uuid.uuid4()}.mp4"
+
+        # Формируем команду FFmpeg
+        command = [
+            "ffmpeg",
+            "-i", hls_url,  # Входной HLS-поток
+            "-vf", filter_complex,  # Фильтр с текстом
+            "-c:v", "libx264",  # Кодек видео
+            "-profile:v", "main",  # Используем основной профиль H.264
+            "-pix_fmt", "yuv420p",  # Формат пикселей для совместимости
+            "-c:a", "aac",  # Кодек аудио
+            "-b:a", "128k",  # Битрейт аудио (128 kbps)
+            "-f", "mp4",  # Формат вывода — MP4
+            temp_file  # Сохраняем в временный файл
+        ]
+
+        process = subprocess.Popen(command, stdout=subprocess.PIPE, stderr=subprocess.PIPE)
+        stdout, stderr = process.communicate()
+
+        if process.returncode != 0:
+            print("FFmpeg error:", stderr.decode())
+            raise HTTPException(status_code=500, detail="Ошибка обработки видео")
+
+        # Загружаем сгенерированный файл в MinIO
+        output_file_name = f"videos/{video_id}_{user_id}.mp4"
+        with open(temp_file, "rb") as file:
+            minio_client.put_object(BUCKET_NAME, output_file_name, file, os.path.getsize(temp_file))
+
+        # Удаляем временный файл
+        os.remove(temp_file)
+
+        # Возвращаем ссылку на файл
+        file_url = minio_client.presigned_get_object(BUCKET_NAME, output_file_name)
+        return JSONResponse(content={"url": file_url})
+
+    except Exception as e:
+        raise HTTPException(status_code=500, detail=str(e))
+    
+@router.get("/video/user-videos")
+def get_user_videos(user_id: str = Query(..., description="ID пользователя")):
+    """Возвращает список всех видео пользователя"""
+    # Получаем список объектов в каталоге пользователя
+    objects = minio_client.list_objects(BUCKET_NAME, prefix=f"hls/{user_id}/", recursive=True)
+    total_size = 0
+
+    # Получаем все видео из репозитория
+    videos = video_repository.get_all_videos()
+    videos_info = []  # Список для хранения информации о видео
+
+    # Формируем список видео
+    for obj in objects:
+        total_size += obj.size
+        if obj.object_name.endswith(".m3u8"):
+            video_id = obj.object_name.split("/")[2]  # Извлекаем ID видео
+            video_url = f"https://me-course.com:9500/{BUCKET_NAME}/{obj.object_name}"
+
+            # Ищем информацию о видео с соответствующим video_id
+            video_info = {}
+            for video in videos:
+                if video["video_url"] == video_id:
+                    video_info = video  # Если нашли, добавляем информацию о видео
+                    video_info['module'] = module_repository.get_module_by_id(video_info['module_id'])
+                    video_info['course'] = course_repository.get_course_by_id(video_info['module']['course_id'])
+
+
+            # Добавляем информацию о видео в список
+            videos_info.append({
+                "video_id": video_id,
+                "hls_url": video_url,
+                "last_modified": obj.last_modified.isoformat(), 
+                "video_info": video_info  # Добавляем всю информацию о видео, если она найдена
+            })
+    
+    return {"videos": videos_info, "total_size": total_size}
 
 
 @router.delete("/{id}")

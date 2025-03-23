@@ -67,7 +67,7 @@ async def google_auth(code: str):
         "client_secret": "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",
         "code": code,
         "grant_type": "authorization_code",
-        "redirect_uri": "http://localhost:3000",
+        "redirect_uri": "https://me-course.com",
     }
 
     async with httpx.AsyncClient() as client:

@@ -38,6 +38,7 @@ class Course(BaseModel):
     title: str | None
     description: str | None
     created_at: int | None
+    creator_id: str | None
 
 
 class Module(BaseModel):
@@ -70,6 +71,7 @@ class CourseKey(BaseModel):
     text_key: str = "need_change"
     course_id: int
     status: str = "A"
+    creator_id:str
 
 
 class VideoView(BaseModel):

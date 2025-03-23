@@ -48,7 +48,7 @@ async def get_course_keys_by_id(id: int, secure_data: dict = Depends(role_requir
 
 
 @router.get("/text/{text_key}")
-async def get_course_keys_by_text_key(text_key: str, secure_data: dict = Depends(role_required(Role.MANAGER))):
+async def get_course_keys_by_text_key(text_key: str):
     course_key_courses = course_key_repository.get_course_keys_by_text_key(text_key)
     
     if not course_key_courses:

@@ -48,7 +48,13 @@ async def get_user_course_by_course_id(course_id: int, secure_data: dict = Depen
 
 
 @router.post("/")
-async def create_user_course(user_course: UserCourse, secure_data: dict = Depends(role_required(Role.USER))):
+async def create_user_course(user_course: UserCourse):
+    if user_courses_repository.check_user_course_exists(user_course.user_id, user_course.course_id):
+        return {
+        "message" : "Epic fail",
+        "details" : "we have someone also"
+        }
+    
     create_user_course = user_courses_repository.create_user_course(UserCourse(**user_course.model_dump()))
 
     if not create_user_course:
