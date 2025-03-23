@@ -128,6 +128,7 @@ async def update_course(
         "message" : f"Course with id {id} update success",
         "data" : result
     }
+
 @router.post("/video/upload")
 async def upload_video(user_id: str = Query(..., description="ID пользователя")):
     """Генерация presigned URL для загрузки видео."""
