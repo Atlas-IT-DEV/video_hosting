@@ -48,8 +48,8 @@ def create_course_key(course_key: CourseKey):
 
     course_key.text_key = f"{hashed_timestamp}{course_key.course_id}"
     
-    query = ("INSERT INTO Course_keys (text_key, course_id) VALUES (%s, %s)")
-    params = (course_key.text_key, course_key.course_id)
+    query = ("INSERT INTO Course_keys (text_key, course_id, creator_id) VALUES (%s, %s, %s)")
+    params = (course_key.text_key, course_key.course_id, course_key.creator_id)
 
     cursor = db.execute_query(query, params)
     

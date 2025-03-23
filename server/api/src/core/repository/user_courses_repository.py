@@ -48,6 +48,16 @@ def get_user_course_by_user_id(user_id: str):
         
     return user_courses
 
+def check_user_course_exists(user_id: str, course_id: str) -> bool:
+
+    # SQL-запрос для проверки существования записи
+    query = """
+    SELECT EXISTS (
+        SELECT 1 FROM User_Courses WHERE user_id = %s AND course_id = %s LIMIT 1
+    ) AS record_exists;
+    """
+    result = db.fetch_one(query, (user_id, course_id))
+    return result 
 
 def get_simple_user_course_by_user_id(user_id: str):
     query = "SELECT * FROM User_Courses WHERE user_id=%s"

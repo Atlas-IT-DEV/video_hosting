@@ -28,7 +28,7 @@ async def get_video_view_by_id(id: int, secure_data: dict = Depends(role_require
 
 
 @router.get("/user/{id}")
-async def get_video_view_by_user_id(user_id: int, secure_data: dict = Depends(role_required(Role.USER))):
+async def get_video_view_by_user_id(user_id: str, secure_data: dict = Depends(role_required(Role.USER))):
     video_views = video_view_repository.get_video_view_by_user_id(user_id)
     
     if not video_views:

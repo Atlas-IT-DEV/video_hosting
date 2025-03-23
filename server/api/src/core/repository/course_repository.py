@@ -77,10 +77,10 @@ def create_course(course: Course, files = []):
         if not result_check:
             return False
 
-    query = ("INSERT INTO Courses (color_config_id, title, description, created_at)"
-             " VALUES (%s, %s, %s, %s)")
+    query = ("INSERT INTO Courses (color_config_id, title, description, created_at, creator_id)"
+             " VALUES (%s, %s, %s, %s, %s)")
     
-    params = (course.color_config_id, course.title, course.description, course.created_at)
+    params = (course.color_config_id, course.title, course.description, course.created_at, course.creator_id)
     
     cursor = db.execute_query(query, params)
 
